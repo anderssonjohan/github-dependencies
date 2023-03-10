@@ -13,33 +13,35 @@ Returns a flat list of objects with the properties:
 #>
 
 param(
-    [parameter(mandatory=$true)]
+    [parameter(mandatory, valuefrompipelinebypropertyname)]
     [string] $owner,
-    [parameter(mandatory=$true)]
+    [parameter(mandatory, valuefrompipelinebypropertyname)]
     [string] $name
 )
 
-function getRepositoryQuery($owner, $name) {
-    @"
-{
-  repository(owner:"$owner", name:"$name") {
-    dependencyGraphManifests {
-      totalCount
-      nodes {
-        filename
-      }
-      edges {
-        node {
-          blobPath
-          dependencies {
-            totalCount
-            nodes {
-              packageName
-              requirements
-              hasDependencies
-              packageManager
-              repository {
-                nameWithOwner
+begin {
+  function getRepositoryQuery($owner, $name) {
+      @"
+  {
+    repository(owner:"$owner", name:"$name") {
+      dependencyGraphManifests {
+        totalCount
+        nodes {
+          filename
+        }
+        edges {
+          node {
+            blobPath
+            dependencies {
+              totalCount
+              nodes {
+                packageName
+                requirements
+                hasDependencies
+                packageManager
+                repository {
+                  nameWithOwner
+                }
               }
             }
           }
@@ -47,21 +49,22 @@ function getRepositoryQuery($owner, $name) {
       }
     }
   }
-}
 "@
+  }
 }
-
-$query = getRepositoryQuery $owner $name
-$result = ./execute-graphql.ps1 $query
-$nonEmpty = $result | % repository | % dependencyGraphManifests | % edges | % node
-$nonEmpty | %{
-  $blobPath = $_.blobPath
-  $_.dependencies | % nodes | %{
-    $_ `
-    | select packageName, requirements, hasDependencies, packageManager, `
-    @{ name = "dependencyRepository"; expression = { $_.repository.nameWithOwner } }, `
-    @{ name = "blobPath"; expression = { $blobPath } }, `
-    @{ name = "owner"; expression = { $owner } }, `
-    @{ name = "name"; expression = { $name } }
+process {
+  $query = getRepositoryQuery $owner $name
+  $result = ./execute-graphql.ps1 $query
+  $nonEmpty = $result | % repository | % dependencyGraphManifests | % edges | % node
+  $nonEmpty | %{
+    $blobPath = $_.blobPath
+    $_.dependencies | % nodes | %{
+      $_ `
+      | select packageName, requirements, hasDependencies, packageManager, `
+      @{ name = "dependencyRepository"; expression = { $_.repository.nameWithOwner } }, `
+      @{ name = "blobPath"; expression = { $blobPath } }, `
+      @{ name = "owner"; expression = { $owner } }, `
+      @{ name = "name"; expression = { $name } }
+    }
   }
 }
