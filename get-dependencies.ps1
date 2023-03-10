@@ -22,7 +22,7 @@ param(
 function getRepositoryQuery($owner, $name) {
     @"
 {
-  repository(owner:\"$owner\", name:\"$name\") {
+  repository(owner:"$owner", name:"$name") {
     dependencyGraphManifests {
       totalCount
       nodes {

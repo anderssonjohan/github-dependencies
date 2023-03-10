@@ -14,7 +14,7 @@ param(
 function getRepositoriesQuery($organization, $isFork) {
     @"
 query (`$endCursor: String) {
-  organization(login: \"$organization\") {
+  organization(login: "$organization") {
     repositories(first: 100, after: `$endCursor, isFork: $($isFork.ToString().ToLower())) {
       pageInfo {
         hasNextPage
